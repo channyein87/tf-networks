@@ -40,17 +40,13 @@ resource "azurerm_key_vault_access_policy" "user_policy" {
   secret_permissions = ["backup", "delete", "get", "list", "purge", "recover", "restore", "set"]
 }
 
-resource "azurerm_user_assigned_identity" "devops_id" {
-  name                = "${var.prefix}-id"
-  resource_group_name = azurerm_resource_group.devops_rg.name
-  location            = azurerm_resource_group.devops_rg.location
-}
-
 resource "azurerm_key_vault_access_policy" "devops_policy" {
   key_vault_id       = azurerm_key_vault.devops_kv.id
   tenant_id          = data.azurerm_client_config.current.tenant_id
-  object_id          = azurerm_user_assigned_identity.devops_id.principal_id
+  object_id          = azurerm_container_group.agent.identity.0.principal_id
   secret_permissions = ["get", "list"]
+
+  depends_on = [azurerm_resource_group.devops_rg]
 }
 
 resource "azurerm_container_group" "agent" {
@@ -61,8 +57,7 @@ resource "azurerm_container_group" "agent" {
   restart_policy      = "Never"
 
   identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.devops_id.id]
+    type         = "SystemAssigned"
   }
 
   container {
