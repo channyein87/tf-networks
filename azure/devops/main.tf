@@ -14,21 +14,6 @@ module "network" {
   depends_on = [azurerm_resource_group.devops_rg]
 }
 
-resource "azurerm_subnet" "container" {
-  name                 = "container-subnet"
-  resource_group_name  = azurerm_resource_group.devops_rg.name
-  virtual_network_name = module.network.vnet_name
-  address_prefixes     = var.container-cidr
-
-  delegation {
-    name = "acctestdelegation"
-
-    service_delegation {
-      name = "Microsoft.ContainerInstance/containerGroups"
-    }
-  }
-}
-
 resource "azurerm_storage_account" "devops_stor" {
   name                     = "chkoazdevops"
   resource_group_name      = azurerm_resource_group.devops_rg.name
@@ -68,28 +53,11 @@ resource "azurerm_key_vault_access_policy" "devops_policy" {
   secret_permissions = ["get", "list"]
 }
 
-resource "azurerm_network_profile" "container_net" {
-  name                = "${var.prefix}-netprofile"
-  location            = azurerm_resource_group.devops_rg.location
-  resource_group_name = azurerm_resource_group.devops_rg.name
-
-  container_network_interface {
-    name = "${var.prefix}-container-nic"
-
-    ip_configuration {
-      name      = "${var.prefix}-ipconfig"
-      subnet_id = azurerm_subnet.container.id
-    }
-  }
-}
-
 resource "azurerm_container_group" "agent" {
   name                = "${var.prefix}-container"
   location            = azurerm_resource_group.devops_rg.location
   resource_group_name = azurerm_resource_group.devops_rg.name
   os_type             = "Linux"
-  ip_address_type     = "private"
-  network_profile_id  = azurerm_network_profile.container_net.id
   restart_policy      = "Never"
 
   identity {
@@ -100,11 +68,11 @@ resource "azurerm_container_group" "agent" {
   container {
     name   = "${var.prefix}-agent"
     image  = var.agent-image
-    cpu    = "0.5"
+    cpu    = "1"
     memory = "1.5"
 
     environment_variables = {
-      "AZP_URL"        = "https://dev.azure.com/chanko"
+      "AZP_URL"        = "https://dev.azure.com/chanko/"
       "AZP_AGENT_NAME" = "az-docker-linux"
       "AZP_POOL"       = "AzureContainer"
       "AZ_SECRET_NAME" = "adocontaineragent"
