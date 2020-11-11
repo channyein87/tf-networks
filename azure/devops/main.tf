@@ -53,6 +53,12 @@ resource "azurerm_key_vault_access_policy" "devops_policy" {
   secret_permissions = ["get", "list"]
 }
 
+resource "azurerm_role_assignment" "devops_id" {
+  scope                = azurerm_resource_group.devops_rg.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_user_assigned_identity.devops_id.principal_id
+}
+
 resource "azurerm_container_group" "agent" {
   name                = "${var.prefix}-container"
   location            = azurerm_resource_group.devops_rg.location
@@ -84,10 +90,4 @@ resource "azurerm_container_group" "agent" {
       protocol = "TCP"
     }
   }
-}
-
-resource "azurerm_role_assignment" "devops_id" {
-  scope                = azurerm_container_group.agent.id
-  role_definition_name = "Contributor"
-  principal_id         = azurerm_user_assigned_identity.devops_id.principal_id
 }
