@@ -30,5 +30,5 @@ variable "container-cidr" {
 
 variable "agent-image" {
   type    = string
-  default = "channyein87/azdevopsagent:3"
+  default = "channyein87/azdevopsagent:latest"
 }
