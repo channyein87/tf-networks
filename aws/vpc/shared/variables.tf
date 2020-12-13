@@ -5,7 +5,7 @@ variable "region" {
 
 variable "profile" {
     type = string
-    default = "kb-shared"
+    default = "kbshared"
 }
 
 variable "prefix" {

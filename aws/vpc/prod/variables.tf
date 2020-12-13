@@ -5,7 +5,7 @@ variable "region" {
 
 variable "profile" {
     type = string
-    default = "kb-prod"
+    default = "kbprod"
 }
 
 variable "prefix" {
@@ -15,7 +15,7 @@ variable "prefix" {
 
 variable "environment" {
     type = string
-    default = "shared"
+    default = "prod"
 }
 
 variable "cidr" {
