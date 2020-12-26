@@ -3,6 +3,7 @@ resource "aws_vpc" "shared" {
 
   tags = {
     "Name" = "${var.prefix}-${var.environment}-vpc"
+    "Environment" = var.environment
   }
 }
 
@@ -15,6 +16,8 @@ resource "aws_subnet" "public" {
 
   tags = {
     "Name" = "${var.prefix}-${var.environment}-public-${substr(each.key, -1, 1)}"
+    "Environment" = var.environment
+    "Tier" = "public"
   }
 }
 
@@ -27,6 +30,8 @@ resource "aws_subnet" "private" {
 
   tags = {
     "Name" = "${var.prefix}-${var.environment}-private-${substr(each.key, -1, 1)}"
+    "Environment" = var.environment
+    "Tier" = "private"
   }
 }
 
@@ -39,6 +44,8 @@ resource "aws_subnet" "attach" {
 
   tags = {
     "Name" = "${var.prefix}-${var.environment}-attach-${substr(each.key, -1, 1)}"
+    "Environment" = var.environment
+    "Tier" = "attach"
   }
 }
 
@@ -47,6 +54,8 @@ resource "aws_route_table" "public" {
 
   tags = {
     "Name" = "${var.prefix}-${var.environment}-public-rt"
+    "Environment" = var.environment
+    "Tier" = "public"
   }
 }
 
@@ -55,6 +64,8 @@ resource "aws_route_table" "private" {
 
   tags = {
     "Name" = "${var.prefix}-${var.environment}-private-rt"
+    "Environment" = var.environment
+    "Tier" = "private"
   }
 }
 
@@ -63,6 +74,8 @@ resource "aws_route_table" "attach" {
 
   tags = {
     "Name" = "${var.prefix}-${var.environment}-attach-rt"
+    "Environment" = var.environment
+    "Tier" = "attach"
   }
 }
 
