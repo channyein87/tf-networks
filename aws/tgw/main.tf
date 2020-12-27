@@ -353,3 +353,67 @@ resource "aws_ec2_transit_gateway_route" "default_blue" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.shared.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.blue.id
 }
+
+data "aws_route_table" "shared_public" {
+  filter {
+    name   = "tag:Name"
+    values = ["${var.prefix}-${var.environment}-public-rt"]
+  }
+}
+
+resource "aws_route" "nat" {
+  destination_cidr_block = "10.0.0.0/8"
+  route_table_id         = data.aws_route_table.shared_public.id
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+}
+
+data "aws_route_table" "test_private" {
+  provider = aws.test
+
+  filter {
+    name   = "tag:Name"
+    values = ["${var.prefix}-test-private-rt"]
+  }
+}
+
+resource "aws_route" "test_default" {
+  provider = aws.test
+
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+  route_table_id         = data.aws_route_table.test_private.id
+}
+
+data "aws_route_table" "dev_private" {
+  provider = aws.dev
+
+  filter {
+    name   = "tag:Name"
+    values = ["${var.prefix}-dev-private-rt"]
+  }
+}
+
+resource "aws_route" "dev_default" {
+  provider = aws.dev
+
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+  route_table_id         = data.aws_route_table.dev_private.id
+}
+
+data "aws_route_table" "prod_private" {
+  provider = aws.prod
+
+  filter {
+    name   = "tag:Name"
+    values = ["${var.prefix}-prod-private-rt"]
+  }
+}
+
+resource "aws_route" "prod_default" {
+  provider = aws.prod
+
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+  route_table_id         = data.aws_route_table.prod_private.id
+}
