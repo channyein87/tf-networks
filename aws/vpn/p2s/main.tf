@@ -1,26 +1,26 @@
 provider "aws" {
-  region = "eu-west-2"
-  profile = "sandpit"
+  region  = "eu-west-2"
+  profile = "cnnn"
 }
 
 data "aws_vpc" "default" {
-  id = "vpc-f13cdc98"
+  id = "vpc-ea3c5d82"
 }
 
 data "aws_subnet" "subnet" {
-  id = "subnet-63202d1b"
+  id = "subnet-a2305bcb"
 }
 
 data "aws_security_group" "chko_vpn_sg" {
-  id = "sg-0501d994994d141be"
+  id = "sg-fa831796"
 }
 
 data "aws_acm_certificate" "server" {
-  domain   = "server"
+  domain = "server"
 }
 
 data "aws_acm_certificate" "client" {
-  domain   = "client1.sandpit.click"
+  domain = "client1.sandpit.click"
 }
 
 resource "aws_ec2_client_vpn_endpoint" "p2s" {
@@ -35,7 +35,7 @@ resource "aws_ec2_client_vpn_endpoint" "p2s" {
   }
 
   connection_log_options {
-    enabled               = false
+    enabled = false
   }
 }
 
