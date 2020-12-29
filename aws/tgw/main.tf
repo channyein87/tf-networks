@@ -1,3 +1,7 @@
+/*==================================
+====== Transit Gateway Setup ======
+==================================*/
+
 resource "aws_ec2_transit_gateway" "tgw" {
   amazon_side_asn                 = 65000
   auto_accept_shared_attachments  = "disable"
@@ -82,6 +86,10 @@ resource "aws_ec2_transit_gateway_route_table" "blue" {
   }
 }
 
+/*==================================
+====== TEST Networks Setup ======
+==================================*/
+
 data "aws_vpc" "test" {
   provider = aws.test
 
@@ -140,15 +148,19 @@ resource "aws_ec2_transit_gateway_route_table_propagation" "test_red" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.test.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.red.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment_accepter.test]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.test]
 }
 
 resource "aws_ec2_transit_gateway_route_table_propagation" "test_green" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.test.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.green.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment_accepter.test]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.test]
 }
+
+/*==================================
+====== DEV Networks Setup ======
+==================================*/
 
 data "aws_vpc" "dev" {
   provider = aws.dev
@@ -208,15 +220,19 @@ resource "aws_ec2_transit_gateway_route_table_propagation" "dev_red" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.dev.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.red.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment_accepter.dev]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.dev]
 }
 
 resource "aws_ec2_transit_gateway_route_table_propagation" "dev_green" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.dev.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.green.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment_accepter.dev]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.dev]
 }
+
+/*==================================
+====== PROD Networks Setup ======
+==================================*/
 
 data "aws_vpc" "prod" {
   provider = aws.prod
@@ -276,15 +292,19 @@ resource "aws_ec2_transit_gateway_route_table_propagation" "prod_blue" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.prod.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.blue.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment_accepter.prod]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.prod]
 }
 
 resource "aws_ec2_transit_gateway_route_table_propagation" "prod_green" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.prod.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.green.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment_accepter.prod]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.prod]
 }
+
+/*==================================
+====== SHARED Networks Setup ======
+==================================*/
 
 data "aws_vpc" "shared" {
   filter {
@@ -325,21 +345,21 @@ resource "aws_ec2_transit_gateway_route_table_propagation" "shared_red" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.shared.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.red.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment.dev]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.shared]
 }
 
 resource "aws_ec2_transit_gateway_route_table_propagation" "shared_blue" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.shared.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.blue.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment.shared]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.shared]
 }
 
 resource "aws_ec2_transit_gateway_route_table_propagation" "shared_green" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.shared.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.green.id
 
-  depends_on = [aws_ec2_transit_gateway_vpc_attachment.shared]
+  depends_on = [aws_ec2_transit_gateway_route_table_association.shared]
 }
 
 resource "aws_ec2_transit_gateway_route" "default_red" {
@@ -416,4 +436,62 @@ resource "aws_route" "prod_default" {
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
   route_table_id         = data.aws_route_table.prod_private.id
+}
+
+/*=========================
+====== TGW VPN Setup ======
+==========================*/
+
+resource "aws_vpn_connection" "vpn" {
+  transit_gateway_id  = aws_ec2_transit_gateway.tgw.id
+  customer_gateway_id = aws_customer_gateway.cgw.id
+  type                = "ipsec.1"
+
+  tunnel1_inside_cidr   = var.tunnel-1-cidr
+  tunnel2_inside_cidr   = var.tunnel-2-cidr
+  tunnel1_preshared_key = var.preshared-key
+  tunnel2_preshared_key = var.preshared-key
+
+  tags = {
+    "Name" = "${var.prefix}-${var.environment}-vpn"
+  }
+}
+
+data "aws_ec2_transit_gateway_vpn_attachment" "vpn_tgw" {
+  transit_gateway_id = aws_ec2_transit_gateway.tgw.id
+  vpn_connection_id  = aws_vpn_connection.vpn.id
+}
+
+resource "aws_ec2_tag" "vpn_tgw" {
+  resource_id = data.aws_ec2_transit_gateway_vpn_attachment.vpn_tgw.id
+  key         = "Name"
+  value       = "vpn-tgw-att"
+}
+
+resource "aws_ec2_transit_gateway_route_table_association" "vpn" {
+  transit_gateway_attachment_id  = data.aws_ec2_transit_gateway_vpn_attachment.vpn_tgw.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.green.id
+
+  depends_on = [aws_vpn_connection.vpn]
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "vpn_green" {
+  transit_gateway_attachment_id  = data.aws_ec2_transit_gateway_vpn_attachment.vpn_tgw.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.green.id
+
+  depends_on = [aws_vpn_connection.vpn]
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "vpn_red" {
+  transit_gateway_attachment_id  = data.aws_ec2_transit_gateway_vpn_attachment.vpn_tgw.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.red.id
+
+  depends_on = [aws_vpn_connection.vpn]
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "vpn_blue" {
+  transit_gateway_attachment_id  = data.aws_ec2_transit_gateway_vpn_attachment.vpn_tgw.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.blue.id
+
+  depends_on = [aws_vpn_connection.vpn]
 }

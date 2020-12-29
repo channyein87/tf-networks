@@ -37,3 +37,18 @@ variable "prod-profile" {
   type    = string
   default = "kbprod"
 }
+
+variable "tunnel-1-cidr" {
+  type    = string
+  default = "169.254.10.0/30"
+}
+
+variable "tunnel-2-cidr" {
+  type    = string
+  default = "169.254.11.0/30"
+}
+
+variable "preshared-key" {
+  type    = string
+  default = "awsamazon"
+}
