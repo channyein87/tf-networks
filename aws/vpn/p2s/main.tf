@@ -12,7 +12,7 @@ data "aws_subnet" "subnet" {
 }
 
 data "aws_security_group" "chko_vpn_sg" {
-  id = "sg-fa831796"
+  id = "sg-0b91723f9f54888d9"
 }
 
 data "aws_acm_certificate" "server" {
