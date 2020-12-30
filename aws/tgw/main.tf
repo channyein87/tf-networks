@@ -381,9 +381,22 @@ data "aws_route_table" "shared_public" {
   }
 }
 
+data "aws_route_table" "shared_private" {
+  filter {
+    name   = "tag:Name"
+    values = ["${var.prefix}-${var.environment}-private-rt"]
+  }
+}
+
 resource "aws_route" "nat" {
   destination_cidr_block = "10.0.0.0/8"
   route_table_id         = data.aws_route_table.shared_public.id
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+}
+
+resource "aws_route" "shared_private" {
+  destination_cidr_block = "192.168.0.0/16"
+  route_table_id         = data.aws_route_table.shared_private.id
   transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
 }
 
