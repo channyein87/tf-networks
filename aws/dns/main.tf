@@ -10,7 +10,7 @@ data "aws_subnet_ids" "subnets" {
 
   filter {
     name   = "tag:Tier"
-    values = ["attach"]
+    values = ["private"]
   }
 }
 
